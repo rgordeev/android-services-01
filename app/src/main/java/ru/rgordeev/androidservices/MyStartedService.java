@@ -4,6 +4,9 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -12,6 +15,8 @@ import androidx.annotation.Nullable;
 public class MyStartedService extends Service {
 
     private static final String TAG = MyStartedService.class.getSimpleName();
+
+    private Messenger messenger;
 
     @Override
     public void onCreate() {
@@ -27,6 +32,7 @@ public class MyStartedService extends Service {
         // Perform Tasks [ Short Duration Task: Don't block the UI ]
 
         int sleepTime = intent.getIntExtra("sleepTime", 1);
+        messenger = (Messenger) intent.getExtras().get("messenger");
 
         new MyAsyncTask().execute(sleepTime);
 
@@ -51,6 +57,7 @@ public class MyStartedService extends Service {
     // AsyncTask class declaration
     class MyAsyncTask extends AsyncTask<Integer, String, Void> {
 
+        private String[] cats = new String[] {"cat1","cat2","cat3"};
         private final String TAG = MyAsyncTask.class.getSimpleName();
 
         @Override
@@ -70,7 +77,7 @@ public class MyStartedService extends Service {
 
             // Dummy Long Operation
             while(ctr <= sleepTime) {
-                publishProgress("Counter is now " + ctr);
+                publishProgress(cats[ctr % 3]);
 
                 try {
                     Thread.sleep(1000);
@@ -89,6 +96,15 @@ public class MyStartedService extends Service {
 
             Toast.makeText(MyStartedService.this, values[0], Toast.LENGTH_SHORT).show();
             Log.i(TAG, "Counter Value " + values[0]+ " onProgressUpdate, Thread name " + Thread.currentThread().getName());
+
+            Message message = Message.obtain();
+            message.obj = values[0];
+
+            try {
+                messenger.send(message);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
 
         @Override
